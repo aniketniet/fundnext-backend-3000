@@ -1,11 +1,12 @@
 const jwt = require("jsonwebtoken");
 const User = require("../model/user");
+require("dotenv").config();
 
 exports.middleware = async (req, res, next) => {
   try {
     const authHeader = req.headers.authorization;
     if (!authHeader) {
-      return res.status(401).json({ message: "header is missing" });
+      return res.status(401).json({ message: "Header is missing" });
     }
 
     const token = authHeader.split(" ")[1];
@@ -13,10 +14,8 @@ exports.middleware = async (req, res, next) => {
       return res.status(401).json({ message: "Token is missing" });
     }
 
-    const decoded = jwt.verify(
-      token,
-      "aaaaaaaaaaaaabbbbbbbbbbbbbbbbbcccccccccccccccccccc"
-    );
+    // Verify the token
+    const decoded = jwt.verify(token, process.env.JWT_SECRET); // Use an environment variable for the secret
     const { email, role } = decoded;
 
     if (!email) {
@@ -38,6 +37,8 @@ exports.middleware = async (req, res, next) => {
     if (err.name === "JsonWebTokenError") {
       console.log(err.message);
       return res.status(403).json({ message: "Token is invalid" });
+    } else if (err.name === "TokenExpiredError") {
+      return res.status(403).json({ message: "Token has expired" });
     }
     console.error(err);
     return res.status(500).json({ message: "Internal server error" });
