@@ -337,7 +337,6 @@ exports.getIdeas = async (req, res) => {
     });
   }
 };
-
 exports.likeIdea = async (req, res) => {
   try {
     const { ideaId } = req.body; // Get idea ID from request body
@@ -352,8 +351,12 @@ exports.likeIdea = async (req, res) => {
       });
     }
 
+    // Log likedBy array and userId for debugging
+    console.log("Liked by array:", idea.likedBy);
+    console.log("User ID:", userId);
+
     // Check if the user has already liked the idea
-    if (idea.likedBy.includes(userId)) {
+    if (idea.likedBy.some((id) => id.equals(userId))) {
       return res.status(400).json({
         status: "failed",
         message: "You have already liked this idea",
@@ -365,13 +368,16 @@ exports.likeIdea = async (req, res) => {
     idea.likedBy.push(userId);
 
     // Save the updated idea
-    await idea.save();
+    const savedIdea = await idea.save();
+
+    // Log the saved idea for debugging
+    console.log("Updated Idea:", savedIdea);
 
     // Send success response
     return res.status(200).json({
       status: "success",
       message: "Business idea liked successfully",
-      likeCount: idea.likeCount,
+      likeCount: savedIdea.likeCount,
     });
   } catch (error) {
     console.error(error);
