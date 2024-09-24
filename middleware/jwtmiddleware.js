@@ -1,5 +1,5 @@
-const jwt = require('jsonwebtoken');
-const User = require('../model/user');
+const jwt = require("jsonwebtoken");
+const User = require("../model/user");
 
 exports.middleware = async (req, res, next) => {
   try {
@@ -8,12 +8,15 @@ exports.middleware = async (req, res, next) => {
       return res.status(401).json({ message: "header is missing" });
     }
 
-    const token = authHeader.split(' ')[1];
+    const token = authHeader.split(" ")[1];
     if (!token) {
       return res.status(401).json({ message: "Token is missing" });
     }
 
-    const decoded = jwt.verify(token, 'aaaaaaaaaaaaabbbbbbbbbbbbbbbbbcccccccccccccccccccc');
+    const decoded = jwt.verify(
+      token,
+      "aaaaaaaaaaaaabbbbbbbbbbbbbbbbbcccccccccccccccccccc"
+    );
     const { email, role } = decoded;
 
     if (!email) {
@@ -32,10 +35,11 @@ exports.middleware = async (req, res, next) => {
 
     next();
   } catch (err) {
-    if (err.name === 'JsonWebTokenError') {
-      return res.status(403).json({ message: 'Token is invalid' });
+    if (err.name === "JsonWebTokenError") {
+      console.log(err.message);
+      return res.status(403).json({ message: "Token is invalid" });
     }
     console.error(err);
-    return res.status(500).json({ message: 'Internal server error' });
+    return res.status(500).json({ message: "Internal server error" });
   }
 };
