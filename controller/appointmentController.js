@@ -21,9 +21,6 @@ const transporter = nodemailer.createTransport({
   },
 });
 
-transporter.verify().then(console.log).catch(console.error);
-
-// Create a new appointment
 exports.createAppointment = async (req, res) => {
   try {
     const {
@@ -40,7 +37,7 @@ exports.createAppointment = async (req, res) => {
 
     const userId = req.user._id;
     const userEmail = req.user.email;
-    const myemail = "indiaglobal@gmail.com";
+    const myemail = process.env.MY_EMAIL || "indiaglobal@gmail.com";
 
     // Validate required fields
     if (!amount || isNaN(amount) || amount <= 0) {
@@ -74,9 +71,10 @@ exports.createAppointment = async (req, res) => {
 
     const savedAppointment = await newAppointment.save();
 
-    // Email sending logic
+    // Email sending logic - made optional
     const sendEmails = async () => {
-      try {
+      // Check if emails are provided and valid
+      if (userEmail && /\S+@\S+\.\S+/.test(userEmail)) {
         const userMailOptions = {
           from: myemail,
           to: userEmail,
@@ -84,6 +82,15 @@ exports.createAppointment = async (req, res) => {
           text: `Dear ${customerName},\n\nYour appointment with ${consultName} has been confirmed for ${date} at ${timeslot}.\n\nThank you for using our service.`,
         };
 
+        try {
+          await transporter.sendMail(userMailOptions);
+        } catch (emailError) {
+          console.error("Error sending user email:", emailError);
+          // Continue without failing the appointment creation
+        }
+      }
+
+      if (consultEmail && /\S+@\S+\.\S+/.test(consultEmail)) {
         const consultantMailOptions = {
           from: myemail,
           to: consultEmail,
@@ -91,23 +98,20 @@ exports.createAppointment = async (req, res) => {
           text: `Dear ${consultName},\n\nA new appointment has been scheduled with ${customerName} for ${date} at ${timeslot}.\n\nPlease prepare accordingly.`,
         };
 
-        await Promise.all([
-          transporter.sendMail(userMailOptions),
-          transporter.sendMail(consultantMailOptions),
-        ]);
-
-        console.log("Emails sent to both user and consultant.");
-      } catch (emailError) {
-        console.error("Error sending emails:", emailError);
-        throw new Error("Error sending emails.");
+        try {
+          await transporter.sendMail(consultantMailOptions);
+        } catch (emailError) {
+          console.error("Error sending consultant email:", emailError);
+          // Continue without failing the appointment creation
+        }
       }
     };
 
     await sendEmails();
 
-    // Send response after emails and appointment are handled
+    // Send response after appointment is handled
     res.status(201).json({
-      message: "Appointment saved and emails sent.",
+      message: "Appointment saved and emails sent (if provided).",
       appointment: savedAppointment,
       razorpayOrder,
     });
