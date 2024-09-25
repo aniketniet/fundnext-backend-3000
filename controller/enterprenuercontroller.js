@@ -106,6 +106,7 @@ exports.editProfile = async (req, res) => {
 
       // Handle profile picture if uploaded
       if (req.file) {
+        console.log(req.file);
         const profilePictureUrl = `${req.protocol}://${req.get(
           "host"
         )}/uploads/${req.file.filename}`;
