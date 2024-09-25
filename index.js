@@ -22,7 +22,8 @@ const Wallet = require("./router/walletRoutes");
 
 // Initialize express app
 const app = express();
-
+// Serve static files from the uploads directory
+app.use("/uploads", express.static("uploads"));
 // Use CORS middleware
 app.use(cors());
 // Use bodyParser middlewar
