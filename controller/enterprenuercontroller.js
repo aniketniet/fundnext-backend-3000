@@ -5,8 +5,37 @@ const Business = require("../model/BusinessIdea");
 const nodemailer = require("nodemailer");
 const Consult = require("../model/consult");
 const Course = require("../model/courses");
-
+const path = require("path");
+const multer = require("multer");
 const dotenv = require("dotenv");
+
+// Multer configuration for image upload
+const storage = multer.diskStorage({
+  destination: (req, file, cb) => {
+    cb(null, "uploads/"); // Upload folder (make sure it exists)
+  },
+  filename: (req, file, cb) => {
+    const ext = path.extname(file.originalname);
+    cb(null, `${Date.now()}-${file.originalname}`); // Create a unique file name
+  },
+});
+
+const upload = multer({
+  storage,
+  limits: { fileSize: 1024 * 1024 * 5 }, // Limit file size to 5MB
+  fileFilter: (req, file, cb) => {
+    const fileTypes = /jpeg|jpg|png/;
+    const extName = fileTypes.test(
+      path.extname(file.originalname).toLowerCase()
+    );
+    const mimeType = fileTypes.test(file.mimetype);
+    if (extName && mimeType) {
+      return cb(null, true);
+    } else {
+      cb(new Error("Only images (jpeg, jpg, png) are allowed."));
+    }
+  },
+});
 
 // Load environment variables from .env file
 dotenv.config();
@@ -23,82 +52,86 @@ const transporter = nodemailer.createTransport({
 transporter.verify().then(console.log).catch(console.error);
 
 //Edit Profile
+// Express route for handling profile edit
 exports.editProfile = async (req, res) => {
-  const {
-    name,
-    newemail,
-    companyname,
-    designation,
-    experience,
-    educationdetails,
-    description,
-  } = req.body;
-  const email = req.email;
-  const role = req.role;
-
-  try {
-    // Find the current user based on email and role
-    const currentUser = await User.findOne({ email, role });
-
-    // Check if user exists and has the correct role
-    if (!currentUser || currentUser.role !== "entrepreneur") {
-      return res.status(400).send({
-        message: "entrepreneur not found or you are not an entrepreneur",
-        status: 400,
-      });
+  // Image upload middleware
+  upload.single("profile_picture")(req, res, async function (err) {
+    if (err) {
+      return res.status(400).send({ message: err.message });
     }
 
-    // Update user fields if provided
-    if (name) {
-      currentUser.name = name;
-    }
+    // Proceed with the rest of the logic after handling image upload
+    const {
+      name,
+      newemail,
+      companyname,
+      designation,
+      experience,
+      educationdetails,
+      description,
+    } = req.body;
 
-    if (newemail && newemail !== currentUser.email) {
-      // Check if new email already exists in the database
-      const existingUser = await User.findOne({ email: newemail });
-      if (existingUser) {
-        return res
-          .status(400)
-          .send({ message: "Email already exists", status: 400 });
+    const email = req.email;
+    const role = req.role;
+
+    try {
+      // Find the current user based on email and role
+      const currentUser = await User.findOne({ email, role });
+
+      // Check if user exists and has the correct role
+      if (!currentUser || currentUser.role !== "entrepreneur") {
+        return res.status(400).send({
+          message: "entrepreneur not found or you are not an entrepreneur",
+          status: 400,
+        });
       }
-      currentUser.email = newemail;
-    }
 
-    if (companyname) {
-      currentUser.companyname = companyname;
-    }
-    if (designation) {
-      currentUser.designation = designation;
-    }
-    if (experience) {
-      currentUser.experience = experience;
-    }
-    if (educationdetails) {
-      currentUser.educationdetails = educationdetails;
-    }
-    if (description) {
-      currentUser.description = description;
-    }
+      // Update user fields if provided
+      if (name) currentUser.name = name;
+      if (newemail && newemail !== currentUser.email) {
+        // Check if new email already exists in the database
+        const existingUser = await User.findOne({ email: newemail });
+        if (existingUser) {
+          return res
+            .status(400)
+            .send({ message: "Email already exists", status: 400 });
+        }
+        currentUser.email = newemail;
+      }
+      if (companyname) currentUser.companyname = companyname;
+      if (designation) currentUser.designation = designation;
+      if (experience) currentUser.experience = experience;
+      if (educationdetails) currentUser.educationdetails = educationdetails;
+      if (description) currentUser.description = description;
 
-    // Save the updated user object
-    await currentUser.save();
+      // Handle profile picture if uploaded
+      if (req.file) {
+        const profilePictureUrl = `${req.protocol}://${req.get(
+          "host"
+        )}/uploads/${req.file.filename}`;
+        currentUser.profileImage = profilePictureUrl; // Save image URL in DB
+      }
 
-    // Generate JWT token with user email and role
-    const token = jwt.sign(
-      { email: currentUser.email, role: currentUser.role },
-      process.env.JWT_SECRET,
-      { expiresIn: "7d" }
-    );
+      // Save the updated user object
+      await currentUser.save();
 
-    // Return success response with updated user and token
-    return res.status(200).send({ currentUser, token, status: 200 });
-  } catch (error) {
-    // Handle errors and log them
-    console.error("Error in editProfile:", error);
-    return res
-      .status(500)
-      .json({ message: "Internal server error", error: error.message });
-  }
+      // Generate JWT token with updated user email and role
+      const token = jwt.sign(
+        { email: currentUser.email, role: currentUser.role },
+        process.env.JWT_SECRET,
+        { expiresIn: "7d" }
+      );
+
+      // Return success response with updated user and token
+      return res.status(200).send({ currentUser, token, status: 200 });
+    } catch (error) {
+      // Handle errors and log them
+      console.error("Error in editProfile:", error);
+      return res
+        .status(500)
+        .json({ message: "Internal server error", error: error.message });
+    }
+  });
 };
 
 //Get curent entrepreneur
