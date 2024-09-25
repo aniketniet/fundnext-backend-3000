@@ -53,6 +53,10 @@ const userSchema = new mongoose.Schema({
       ref: "Course",
     },
   ],
+  profileImage: {
+    type: String,
+    default: "/uploads/default_profile.jpg",
+  },
 });
 
 const User = mongoose.model("User", userSchema);
