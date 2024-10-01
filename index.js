@@ -1,9 +1,10 @@
 const express = require("express");
 const mongoose = require("mongoose");
-const bodyParser = require("body-parser");
 const cors = require("cors");
 const dotenv = require("dotenv");
-const multer = require("multer");
+const http = require("http");
+const https = require("https");
+const fs = require("fs");
 
 dotenv.config();
 
@@ -26,7 +27,7 @@ const app = express();
 app.use("/uploads", express.static("uploads"));
 // Use CORS middleware
 app.use(cors());
-// Use bodyParser middlewar
+// Use bodyParser middleware
 app.use(express.urlencoded({ extended: true }));
 app.use(express.json());
 
@@ -61,8 +62,42 @@ mongoose
     console.error("Error connecting to MongoDB:", error.message);
   });
 
-// Start the server
-const PORT = process.env.PORT || 3000;
-app.listen(PORT, "0.0.0.0", () => {
-  console.log(`Server is running on port ${PORT}`);
+// SSL certificate setup
+const privateKey = fs.readFileSync(
+  "/home/ubuntu/ssl-certificates/privkey.pem",
+  "utf8"
+);
+const certificate = fs.readFileSync(
+  "/home/ubuntu/ssl-certificates/cert.pem",
+  "utf8"
+);
+const ca = fs.readFileSync("/home/ubuntu/ssl-certificates/chain.pem", "utf8");
+
+const credentials = {
+  key: privateKey,
+  cert: certificate,
+  ca: ca,
+};
+
+// Create HTTPS server
+const httpsServer = https.createServer(credentials, app);
+const HTTPS_PORT = process.env.PORT_HTTPS || 5000;
+
+// Create HTTP server and redirect to HTTPS
+const httpApp = express();
+httpApp.use((req, res) => {
+  res.redirect(`https://${req.headers.host}${req.url}`);
+});
+const HTTP_PORT = process.env.PORT_HTTP || 6000;
+const httpServer = http.createServer(httpApp);
+
+// Start servers
+httpsServer.listen(HTTPS_PORT, () => {
+  console.log(`HTTPS Server is running on port ${HTTPS_PORT}`);
+});
+
+httpServer.listen(HTTP_PORT, () => {
+  console.log(
+    `HTTP Server is running on port ${HTTP_PORT} and redirecting to HTTPS`
+  );
 });
