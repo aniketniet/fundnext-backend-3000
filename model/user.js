@@ -57,6 +57,12 @@ const userSchema = new mongoose.Schema({
     type: String,
     default: "/uploads/default_profile.jpg",
   },
+  otp: {
+    type: String
+  },
+  otpExpiry: {
+    type: Date
+  }
 });
 
 const User = mongoose.model("User", userSchema);
