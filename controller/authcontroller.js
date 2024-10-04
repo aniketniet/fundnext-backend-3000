@@ -136,7 +136,7 @@ exports.sendOtp = async (req, res) => {
             from: "indiaglobal0@gmail.com",
             to: email,
             subject: "Reset Password OTP",
-            text: "Your otp is 1234",
+            text: `Your otp is ${otp}`,
         }
         transporter.sendMail(mailOptions, (error, info) => {
             if (error) {
