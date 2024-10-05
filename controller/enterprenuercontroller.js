@@ -329,8 +329,8 @@ exports.sendInterest = async (req, res) => {
   try {
     const entrepreneurId = req.user.name;
     const mailOptions = {
-      from: "indiaglobal0@gmail.com",
-      to: "indiaglobal0@gmail.com",
+      from: "brandneers@gmail.com",
+      to: req.user.email,
       subject: "Some interested in your profile",
       text: `You have a new form intrest: ` + entrepreneurId,
     };
