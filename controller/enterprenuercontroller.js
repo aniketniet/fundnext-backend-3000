@@ -8,6 +8,8 @@ const Course = require("../model/courses");
 const path = require("path");
 const multer = require("multer");
 const dotenv = require("dotenv");
+const Price = require("../model/Price");
+const walletHistory = require("../model/walletHistory");
 
 // Multer configuration for image upload
 const storage = multer.diskStorage({
@@ -206,35 +208,69 @@ exports.getAllInvestors = async (req, res) => {
 };
 
 //Get Investor By ID
+
 exports.getInvestorById = async (req, res) => {
   const { id } = req.params;
 
   try {
     const userId = req.user.id;
 
+    // Find the investor with the given id and role "investor"
     const investor = await User.findOne({ _id: id, role: "investor" });
 
+    // Get the current logged-in user
     const currentLoggedInUser = await User.findById(userId);
 
+    // Check if the investor profile is already viewed by the current user
     if (!currentLoggedInUser.views.includes(investor.id)) {
+      // Fetch the profile price from the Price model
+      const priceData = await Price.findOne();
+      if (!priceData || !priceData.profilePrice) {
+        return res
+          .status(400)
+          .send({ message: "Profile price not found", status: 400 });
+      }
+
+      const profilePrice = parseFloat(priceData.profilePrice); // Ensure profilePrice is a number
+
       const balance = currentLoggedInUser.wallet;
-      if (balance >= 10) {
-        const newBalance = balance - 10;
+
+      // Check if the user has enough balance to view the investor profile
+      if (balance >= profilePrice) {
+        // Deduct the profile price from the user's wallet
+        const newBalance = balance - profilePrice;
         currentLoggedInUser.wallet = newBalance;
+
+        // Add investor id to the views array
         currentLoggedInUser.views.push(investor.id);
+
+        // Save the user's new wallet balance and views
         await currentLoggedInUser.save();
+
+        // Save the transaction in the wallet history
+        const walletHistoryEntry = new walletHistory({
+          userId: userId,
+          amount: profilePrice,
+          type: 1, // Type '1' indicates a debit transaction
+          discription: `Payment for viewing investor profile ${investor.id}`,
+        });
+        await walletHistoryEntry.save();
       } else {
+        // Return error if balance is insufficient
         return res
           .status(400)
           .send({ message: "Insufficient balance", status: 400 });
       }
     }
+
+    // Check if the investor is found
     if (!investor) {
       return res
         .status(400)
         .send({ message: "Investor not found", status: 400 });
     }
 
+    // Return the investor details
     return res.status(200).send({ investor, status: 200 });
   } catch (error) {
     console.error("Error in getInvestorById:", error);
