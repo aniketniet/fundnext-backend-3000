@@ -2,6 +2,7 @@ const bcrypt = require("bcrypt");
 const jwt = require("jsonwebtoken");
 const User = require("../model/user");
 const nodemailer = require("nodemailer");
+const Contact = require("../model/contact");
 // const ChatMessage = require('../model/ChatMessage');
 
 const SALT_ROUNDS = 10;
@@ -220,6 +221,25 @@ exports.updatePassword = async (req, res) => {
         .json({ user, token, message: "Password updated successfully" });
     });
   } catch (err) {
+    return res.status(500).json({ message: "Internal server error" });
+  }
+};
+
+exports.setContact = async (req, res) => {
+  try {
+    const { name, email, phone, message } = req.body;
+
+    const contact = new Contact({
+      name,
+      email,
+      phone,
+      description: message,
+    });
+    await contact.save();
+    return res
+      .status(200)
+      .json({ message: "Contact saved successfully", status: 200 });
+  } catch (error) {
     return res.status(500).json({ message: "Internal server error" });
   }
 };

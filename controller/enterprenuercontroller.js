@@ -252,7 +252,7 @@ exports.getInvestorById = async (req, res) => {
           userId: userId,
           amount: profilePrice,
           type: 1, // Type '1' indicates a debit transaction
-          discription: `Payment for viewing investor profile ${investor.id}`,
+          discription: `Payment for viewing investor profile`,
         });
         await walletHistoryEntry.save();
       } else {
