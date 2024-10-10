@@ -4,6 +4,7 @@ const multer = require("multer");
 const path = require("path");
 const Price = require("../model/Price");
 const walletHistory = require("../model/walletHistory");
+const User = require("../model/user");
 
 // Set up multer storage
 const storage = multer.diskStorage({
