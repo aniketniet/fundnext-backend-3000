@@ -117,7 +117,7 @@ const saveBusinessIdea = async (req, res) => {
       await user.save();
 
       // Save the transaction in wallet history
-      const walletHistoryEntry = new WalletHistory({
+      const walletHistoryEntry = new walletHistory({
         userId: userId,
         amount: ideaPrice,
         type: 1, // Assuming '1' indicates a debit transaction
