@@ -37,8 +37,9 @@ app.get("/ping", (req, res) => {
 
 // Define parent routers
 app.use("/auth", auth);
-app.use(middleware);
+
 app.use("/entrepreneur", entrepreneur);
+app.use(middleware);
 app.use("/check", check);
 app.use("/investor", investor);
 app.use("/api", businessIdea);
