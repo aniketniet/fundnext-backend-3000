@@ -237,9 +237,11 @@ exports.setContact = async (req, res) => {
       type,
     });
     await contact.save();
-    return res
-      .status(200)
-      .json({ message: "Contact saved successfully", status: 200 });
+    return res.status(200).json({
+      message: "Contact saved successfully",
+      status: 200,
+      data: contact,
+    });
   } catch (error) {
     return res.status(500).json({ message: "Internal server error" });
   }
