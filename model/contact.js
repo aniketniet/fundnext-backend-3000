@@ -19,7 +19,6 @@ const contactSchema = new mongoose.Schema(
     type: {
       type: String,
       required: true,
-      enum: ["genral", "service"],
     },
   },
 

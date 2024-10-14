@@ -227,13 +227,14 @@ exports.updatePassword = async (req, res) => {
 
 exports.setContact = async (req, res) => {
   try {
-    const { name, email, phone, message } = req.body;
+    const { name, email, phone, message, type } = req.body;
 
     const contact = new Contact({
       name,
       email,
       phone,
       description: message,
+      type,
     });
     await contact.save();
     return res
