@@ -17,7 +17,7 @@ const {
 const { middleware } = require("../middleware/jwtmiddleware");
 
 router.get("/currentuser", middleware, getCurrentUser);
-router.patch("/editprofile", editProfile);
+router.patch("/editprofile", middleware, editProfile);
 router.delete("/deleteuser", deleteentrepreneur);
 router.get("/investors", getAllInvestors);
 router.get("/investor/:id", getInvestorById);
