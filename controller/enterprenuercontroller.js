@@ -141,19 +141,35 @@ exports.editProfile = async (req, res) => {
 exports.getCurrentUser = async (req, res) => {
   const email = req.email;
   const role = req.role;
+
+  // Debugging: Log email and role
+  console.log("Email:", email);
+  console.log("Role:", role);
+
   try {
     const currentUser = await User.findOne({ email: email, role: role });
-    if (!currentUser || currentUser.role !== "entrepreneur") {
+
+    if (!currentUser) {
       return res.status(400).send({
-        message: "User not found,  or you are not an entrepreneur",
+        message: "User not found",
         status: 400,
       });
-    } else {
-      const entrepreneurIdeas = await Business.find({ user: currentUser._id });
-      return res
-        .status(200)
-        .send({ currentUser, entrepreneurIdeas, status: 200 });
     }
+
+    if (currentUser.role !== "entrepreneur") {
+      return res.status(400).send({
+        message: "You are not an entrepreneur",
+        status: 400,
+      });
+    }
+
+    // Fetch entrepreneur ideas
+    const entrepreneurIdeas = await Business.find({ user: currentUser._id });
+    return res.status(200).send({
+      currentUser,
+      entrepreneurIdeas,
+      status: 200,
+    });
   } catch (error) {
     console.log(error);
     return res.status(500).json({
