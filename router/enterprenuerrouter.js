@@ -20,7 +20,7 @@ router.get("/currentuser", middleware, getCurrentUser);
 router.patch("/editprofile", middleware, editProfile);
 router.delete("/deleteuser", deleteentrepreneur);
 router.get("/investors", getAllInvestors);
-router.get("/investor/:id", getInvestorById);
+router.get("/investor/:id", middleware, getInvestorById);
 router.post("/send-message/:investorId", middleware, sendMessageToInvestor);
 // router.get('/messages/:roomId', getMessagesWithInvestor);
 router.get("/express-interest/:investorId", middleware, sendInterest); //send email notification
